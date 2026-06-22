@@ -1,0 +1,10 @@
+db.orders.aggregate( [
+   { $match: { status: 'A' } },
+   {
+     $group: {
+        _id: "$cust_id",
+        total: { $sum: "$price" }
+     }
+   },
+   { $match: { total: { $gt: 250, $lte: 350 } } }
+] );

@@ -10,117 +10,6 @@
 using namespace antlrcpptest;
 using namespace antlr4;
 
-const char *example1 = 
-"db.orders.aggregate( [           \
-  {                               \
-    $group: {                     \
-      _id: null,                  \
-      count: { $sum: 1 }          \
-    }                             \
-  }                               \
-] )";
-
-const char *example2 = 
-"db.orders.aggregate( [           \
-  {                               \
-    $group: {                     \
-      _id: null,                  \
-      total: { $sum: \"$price\" } \
-    }                             \
-  }                               \
-] )";
-
-const char *example3 = 
-"db.orders.aggregate( [           \
-  {                               \
-    $group: {                     \
-      _id: \"$cust_id\",          \
-      total: { $sum: \"$price\" } \
-    }                             \
-  }                               \
-] )";
-
-const char *example4 =
-"db.orders.aggregate( [           \
-  {                               \
-    $group: {                     \
-      _id: \"$cust_id\",          \
-      total: { $sum: \"$price\" } \
-    }                             \
-  },                              \
-  { $sort: { total: 1 } }         \
-] )";
-
-const char *example5 =
-"db.orders.aggregate( [           \
-  {                               \
-    $group: {                     \
-      _id: \"$cust_id\",          \
-      total: { $sum: \"$price\" } \
-    }                             \
-  },                              \
-  { $limit: 5 }                   \
-] )";
-
-const char *example6 = 
-"db.orders.aggregate( [              \
-  {                                  \
-    $group: {                        \
-      _id: \"$cust_id\",             \
-      count: { $sum: 1 }             \
-    }                                \
-  },                                 \
-  { $match: { count: { $gt: 1 } } }  \
-] )";
-
-const char *example7 =
-"db.orders.aggregate( [              \
-   { $match: { status: 'A' } },      \
-   {                                 \
-     $group: {                       \
-        _id: \"$cust_id\",           \
-        total: { $sum: \"$price\" }  \
-     }                               \
-   }                                 \
-] )";
-
-const char *example8 =
-"db.orders.aggregate( [                \
-   { $match: { status: 'A' } },        \
-   {                                   \
-     $group: {                         \
-        _id: \"$cust_id\",             \
-        total: { $sum: \"$price\" }    \
-     }                                 \
-   },                                  \
-   { $match: { total: { $gt: 250, $lte: 350 } } } \
-] )";
-
-const char *example9 =
-"db.movies.aggregate( [                           \
-   { $match: { runtime: { $gt: 1000 } } },        \
-   {                                              \
-     $lookup: {                                   \
-       from: \"comments\",                        \
-       localField: \"_id\",                       \
-       foreignField: \"movie_id\",                \
-       as: \"movie_comments\"                     \
-     }                                            \
-   },                                             \
-   {                                              \
-     $project: {                                  \
-       _id: 0,                                    \
-       title: 1,                                  \
-       year: 1,                                   \
-       \"movie_comments.name\": 1,                \
-       \"movie_comments.text\": 1,                \
-       \"movie_comments.date\": 1                 \
-     }                                            \
-   }                                              \
-] )";
-
-const char *examples[] = { example1, example2, example3, example4, example5, example6, example7, example8, example9 };
-
 Table::Table(SQLQuery query): name(""), definition("(" + query.toString() + ")"), fields(query.getFieldNames()) {}
 
 Table::Table(SQLQuery query, std::string _name): name(_name), definition("(" + query.toString() + ")"), fields(query.getFieldNames()) {}
@@ -670,52 +559,47 @@ SQLQuery Select(std::vector<std::vector<std::string>> fields, SQLQuery collectio
     return collection;
   }
 
-AggrToSQLParser enterTableDefsFromCin() {
-  std::string anotherTable = "y";
+int main(int argc, const char **argv) {
+  std::ifstream tableDefsStream(argv[1]);
+  std::ifstream pipelineStream(argv[2]);
+  std::string defs;
   std::map<std::string, Table> tables;
-  do {
-    std::cout << "Enter table name: ";
-    std::string tableName;
-    std::cin >> tableName;
-    std::string field;
-    std::vector<std::string> fields;
-    int n;
-    std::cout << "Enter the number of fields: ";
-    std::cin >> n;
-    for (int i = 0; i < n; ++i) {
-      std::cout << "Enter field name: ";
-      std::cin >> field;
-      fields.push_back(field);
+  while (true) {
+    std::getline(tableDefsStream, defs, ';');
+    if (std::find(defs.begin(), defs.end(), '(') != defs.end()) {
+      std::istringstream input;
+      input.str(defs);
+      std::string tableName;
+      std::getline(input, tableName, '(');
+      std::vector<std::string> fields;
+      while (true) {
+        std::string field;
+        std::getline(input, field, ',');
+        if (field[field.size() - 1] == ')') {
+          fields.push_back(field.substr(0, field.size() - 1));
+          break;
+        } else {
+          fields.push_back(field);
+        }
+      }
+      tables[tableName] = Table(tableName, "", fields);
+    } else {
+      break;
     }
-    tables[tableName] = Table(tableName, "", fields);
-    std::cout << "Define another table? (y/n) ";
-    std::cin >> anotherTable;
-  } while (anotherTable == "y" || anotherTable == "Y");
-  return AggrToSQLParser(tables);
-}
-
-AggrToSQLParser parserForExamples() {
-  std::map<std::string, Table> tables;
-  tables["orders"] = Table("orders", "", std::vector<std::string>({"cust_id", "ord_date", "status", "price", "items"}));
-  tables["movies"] = Table("movies", "", std::vector<std::string>({"_id", "title", "year", "runtime"}));
-  tables["comments"] = Table("comments", "", std::vector<std::string>({"movie_id", "text", "name", "date"}));
-  return AggrToSQLParser(tables);
-}
-
-int main(int , const char **) {
-  for (auto example : examples) {
-    ANTLRInputStream input(example);
-    AggrPipelineLexer lexer(&input);
-    CommonTokenStream tokens(&lexer);
-
-    tokens.fill();
-
-    AggrPipelineParser parser(&tokens);
-    AggrPipelineParser::PipelineContext *pipeline = parser.pipeline();
-
-    AggrToSQLParser myParser = parserForExamples();
-
-    std::cout << myParser.parsePipeline(pipeline).toString() << std::endl << std::endl;
   }
+
+  std::string pipelineString;
+  std::getline(pipelineStream, pipelineString, ';');
+
+  std::cout << "Aggregation pipeline:" << std::endl << pipelineString << std::endl << std::endl;
+
+  ANTLRInputStream input(pipelineString);
+  AggrPipelineLexer lexer(&input);
+  CommonTokenStream tokens(&lexer);
+  tokens.fill();
+  AggrPipelineParser parser(&tokens);
+  AggrPipelineParser::PipelineContext *pipeline = parser.pipeline();
+  AggrToSQLParser myParser(tables);
+  std::cout << "SQL:" << std::endl << myParser.parsePipeline(pipeline).toString() << std::endl;
   return 0;
 }

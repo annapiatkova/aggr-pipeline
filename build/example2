@@ -1,0 +1,8 @@
+db.orders.aggregate( [
+  {
+    $group: {
+      _id: null,
+      total: { $sum: \"$price\" }
+    }
+  }
+] );

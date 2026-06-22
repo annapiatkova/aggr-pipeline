@@ -1,0 +1,9 @@
+db.orders.aggregate( [
+  {
+    $group: {
+      _id: "$cust_id",
+      count: { $sum: 1 }
+    }
+  },
+  { $match: { count: { $gt: 1 } } }
+] );
