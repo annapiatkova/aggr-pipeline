@@ -1,8 +1,8 @@
 db.orders.aggregate( [
   {
     $group: {
-      _id: \"$cust_id\",
-      total: { $sum: \"$price\" }
+      _id: "$cust_id",
+      total: { $sum: "$price" }
     }
   },
   { $limit: 5 }
