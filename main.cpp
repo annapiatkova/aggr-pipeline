@@ -559,6 +559,14 @@ SQLQuery Select(std::vector<std::vector<std::string>> fields, SQLQuery collectio
     return collection;
   }
 
+std::string removeWhitespaces(std::string s) {
+  std::istringstream istr;
+  istr.str(s);
+  std::string res;
+  istr >> res;
+  return res;
+}
+
 int main(int argc, const char **argv) {
   std::ifstream tableDefsStream(argv[1]);
   std::ifstream pipelineStream(argv[2]);
@@ -571,15 +579,16 @@ int main(int argc, const char **argv) {
       input.str(defs);
       std::string tableName;
       std::getline(input, tableName, '(');
+      tableName = removeWhitespaces(tableName);
       std::vector<std::string> fields;
       while (true) {
         std::string field;
         std::getline(input, field, ',');
         if (field[field.size() - 1] == ')') {
-          fields.push_back(field.substr(0, field.size() - 1));
+          fields.push_back(removeWhitespaces(field.substr(0, field.size() - 1)));
           break;
         } else {
-          fields.push_back(field);
+          fields.push_back(removeWhitespaces(field));
         }
       }
       tables[tableName] = Table(tableName, "", fields);
