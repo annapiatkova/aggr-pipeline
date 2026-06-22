@@ -193,15 +193,15 @@ void SelectList::setFront(Field field) {
 }
 
 SQLQuery::SQLQuery(SelectList _select_list, Table _collection, std::string _where_clause,
-  std::string _group_by_clause, std::string _having_clause, std::string _order_by_clause,
+  std::string _group_by_clause, std::string _order_by_clause,
   std::string _limit_clause): select_list(_select_list), collections(std::vector<Table>({_collection})),
-  where_clause(_where_clause), group_by_clause(_group_by_clause), having_clause(_having_clause),
+  where_clause(_where_clause), group_by_clause(_group_by_clause),
   order_by_clause(_order_by_clause), limit_clause(_limit_clause) {}
 
 SQLQuery::SQLQuery(SelectList _select_list, std::vector<Table> _collections, std::string _where_clause,
-  std::string _group_by_clause, std::string _having_clause, std::string _order_by_clause,
+  std::string _group_by_clause, std::string _order_by_clause,
   std::string _limit_clause): select_list(_select_list), collections(_collections),
-  where_clause(_where_clause), group_by_clause(_group_by_clause), having_clause(_having_clause),
+  where_clause(_where_clause), group_by_clause(_group_by_clause),
   order_by_clause(_order_by_clause), limit_clause(_limit_clause) {}
   
 std::string SQLQuery::toString() {
@@ -213,7 +213,6 @@ std::string SQLQuery::toString() {
     return "SELECT " + select_list.toString() + " FROM " + tables.substr(2) +
     (where_clause == "" ? "" : " WHERE " + where_clause) +
     (group_by_clause == "" ? "" : " GROUP BY " + group_by_clause) +
-    (having_clause == "" ? "" : " HAVING " + having_clause) +
     (order_by_clause == "" ? "" : " ORDER BY " + order_by_clause) +
     (limit_clause == "" ? "" : " LIMIT " + limit_clause);
   }
@@ -222,15 +221,13 @@ std::string SQLQuery::toString() {
     return "SELECT " + select_list.toString() + " FROM " + collection.name + 
     (where_clause == "" ? "" : " WHERE " + where_clause) +
     (group_by_clause == "" ? "" : " GROUP BY " + group_by_clause) +
-    (having_clause == "" ? "" : " HAVING " + having_clause) +
     (order_by_clause == "" ? "" : " ORDER BY " + order_by_clause) +
     (limit_clause == "" ? "" : " LIMIT " + limit_clause);
-  if (where_clause == "" && group_by_clause == "" && having_clause == "" && order_by_clause == "" && limit_clause == "")
+  if (where_clause == "" && group_by_clause == "" && order_by_clause == "" && limit_clause == "")
     return "SELECT " + select_list.toString() + " FROM " + collection.toString();
   return "SELECT * FROM (SELECT " + select_list.toString() + " FROM " + collection.toString() + ")" + 
     (where_clause == "" ? "" : " WHERE " + where_clause) +
     (group_by_clause == "" ? "" : " GROUP BY " + group_by_clause) +
-    (having_clause == "" ? "" : " HAVING " + having_clause) +
     (order_by_clause == "" ? "" : " ORDER BY " + order_by_clause) +
     (limit_clause == "" ? "" : " LIMIT " + limit_clause);
 }
@@ -246,17 +243,17 @@ std::vector<std::string> SQLQuery::getFieldNames() {
 }
 
 SQLQuery::SQLQuery (Table table): select_list(Asterisk()), collections(std::vector<Table>({table})), where_clause(""),
-  group_by_clause(""), having_clause(""), order_by_clause(""), limit_clause("") {}
+  group_by_clause(""), order_by_clause(""), limit_clause("") {}
 
 SQLQuery::SQLQuery (SelectList _select_list, Table table): select_list(_select_list), collections(std::vector<Table>({table})) {}
 
 SQLQuery TableToJson(Table table, std::string alias) {
   return SQLQuery(SelectList(std::vector<Field>(1, Field("JSON_ARRAYAGG(CAST(ROW(" + table.fieldsAsString() + ") AS " + table.name + "))", alias))),
-    table, "", "", "", "", "");
+    table, "", "", "", "");
 }
 
 SQLQuery Group(std::string id, SelectList aggrExprs, SQLQuery collection) {
-  if (collection.select_list.isAsterisk() && collection.group_by_clause == "" && collection.having_clause == ""
+  if (collection.select_list.isAsterisk() && collection.group_by_clause == ""
     && collection.order_by_clause == "" && collection.limit_clause == "") {
     if (id == "NULL") {
       collection.select_list = aggrExprs;
@@ -269,10 +266,10 @@ SQLQuery Group(std::string id, SelectList aggrExprs, SQLQuery collection) {
     }
   } else {
     if (id == "NULL") {
-      return SQLQuery(aggrExprs, Table(collection), "", "", "", "", "");
+      return SQLQuery(aggrExprs, Table(collection), "", "", "", "");
     } else {
       aggrExprs.setFront(Field("", id));
-      return SQLQuery(aggrExprs, Table(collection), "", id, "", "", "");
+      return SQLQuery(aggrExprs, Table(collection), "", id, "", "");
     }
   }
 }
@@ -284,7 +281,7 @@ SQLQuery Limit(std::string count, SQLQuery collection) {
 }
 
 SQLQuery Match(std::string predicate, SQLQuery collection) {
-  if (collection.group_by_clause == "" && collection.having_clause == "" && collection.order_by_clause == "" && collection.limit_clause == "") {
+  if (collection.group_by_clause == "" && collection.order_by_clause == "" && collection.limit_clause == "") {
     if (collection.where_clause == "") {
       collection.where_clause = predicate;
     } else {
@@ -292,15 +289,7 @@ SQLQuery Match(std::string predicate, SQLQuery collection) {
     }
     return collection;
   }
-  if (collection.order_by_clause == "" && collection.limit_clause == "") {
-    if (collection.having_clause == "") {
-      collection.having_clause = predicate;
-    } else {
-      collection.having_clause = "(" + collection.having_clause + ") AND (" + predicate + ")";
-    }
-    return collection;
-  }
-  return SQLQuery(Asterisk(), Table(collection), predicate, "", "", "", "");
+  return SQLQuery(Asterisk(), Table(collection), predicate, "", "", "");
 }
 
 SQLQuery Sort(std::string sortExpr, SQLQuery collection) {
@@ -312,7 +301,7 @@ SQLQuery Sort(std::string sortExpr, SQLQuery collection) {
     collection.order_by_clause = sortExpr;
     return collection;
   }
-  return SQLQuery(Asterisk(), Table(collection), "", "", "", sortExpr, "");
+  return SQLQuery(Asterisk(), Table(collection), "", "", sortExpr, "");
 }
 
 
@@ -647,7 +636,7 @@ SQLQuery Select(std::vector<std::vector<std::string>> fields, SQLQuery collectio
       groupByClause = groupByClause + ", " + _fields[i];
     }
   }
-  return SQLQuery(SelectList(selectList), tables, "", groupByClause, "", "", "");
+  return SQLQuery(SelectList(selectList), tables, "", groupByClause, "", "");
 }
 
  SQLQuery AggrToSQLParser::parseProject(AggrPipelineParser::Project_Context *tree, SQLQuery collection) {

@@ -58,16 +58,15 @@ public:
   std::vector<Table> collections;
   std::string where_clause;
   std::string group_by_clause;
-  std::string having_clause;
   std::string order_by_clause;
   std::string limit_clause;
 
   SQLQuery(SelectList _select_list, Table _collection, std::string _where_clause,
-    std::string _group_by_clause, std::string _having_clause, std::string _order_by_clause,
+    std::string _group_by_clause, std::string _order_by_clause,
     std::string _limit_clause);
 
   SQLQuery(SelectList _select_list, std::vector<Table> _collections, std::string _where_clause,
-    std::string _group_by_clause, std::string _having_clause, std::string _order_by_clause,
+    std::string _group_by_clause, std::string _order_by_clause,
     std::string _limit_clause);
 
   std::string toString();
