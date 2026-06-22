@@ -8,6 +8,12 @@ GROUP: '$group' ;
 MATCH: '$match' ;
 SORT: '$sort' ;
 LIMIT: '$limit' ;
+LOOKUP: '$lookup' ;
+PROJECT: '$project' ;
+From: 'from' ;
+LocalField: 'localField' ;
+ForeignField: 'foreignField' ;
+As: 'as' ;
 
 // supported aggregate functions
 SUM: '$sum' ;
